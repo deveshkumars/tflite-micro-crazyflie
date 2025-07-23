@@ -27,7 +27,7 @@ limitations under the License.
 #include "tensorflow/lite/schema/schema_generated.h"
 
 namespace {
-using HelloWorldOpResolver = tflite::MicroMutableOpResolver<17>;
+using HelloWorldOpResolver = tflite::MicroMutableOpResolver<20>;
 
 TfLiteStatus RegisterOps(HelloWorldOpResolver& op_resolver) {
   TF_LITE_ENSURE_STATUS(op_resolver.AddFullyConnected()); // 1
@@ -48,6 +48,9 @@ TfLiteStatus RegisterOps(HelloWorldOpResolver& op_resolver) {
   TF_LITE_ENSURE_STATUS(op_resolver.AddNotEqual()); // 16
   // TF_LITE_ENSURE_STATUS(op_resolver.AddSelectV2()); // 17
   TF_LITE_ENSURE_STATUS(op_resolver.AddSelect()); // 18
+  TF_LITE_ENSURE_STATUS(op_resolver.AddDequantize()); // 19
+  TF_LITE_ENSURE_STATUS(op_resolver.AddQuantize()); // 20
+
   return kTfLiteOk;
 }
 }  // namespace
@@ -85,7 +88,7 @@ TfLiteStatus RegisterOps(HelloWorldOpResolver& op_resolver) {
 
 TfLiteStatus LoadFloatModelAndPerformInference() {
   const tflite::Model* model =
-      ::tflite::GetModel(g_hello_world_float_model_data);
+      ::tflite::GetModel(g_hello_world_int8_model_data);
   TFLITE_CHECK_EQ(model->version(), TFLITE_SCHEMA_VERSION);
   printf("hi0\n");
   HelloWorldOpResolver op_resolver;
@@ -127,25 +130,25 @@ TfLiteStatus LoadFloatModelAndPerformInference() {
   return kTfLiteOk;
 }
 
-// TfLiteStatus LoadQuantModelAndPerformInference() {
-//   // Map the model into a usable data structure. This doesn't involve any
-//   // copying or parsing, it's a very lightweight operation.
-//   const tflite::Model* model =
-//       ::tflite::GetModel(g_hello_world_int8_model_data);
-//   TFLITE_CHECK_EQ(model->version(), TFLITE_SCHEMA_VERSION);
+TfLiteStatus LoadQuantModelAndPerformInference() {
+  // Map the model into a usable data structure. This doesn't involve any
+  // copying or parsing, it's a very lightweight operation.
+  const tflite::Model* model =
+      ::tflite::GetModel(g_hello_world_int8_model_data);
+  TFLITE_CHECK_EQ(model->version(), TFLITE_SCHEMA_VERSION);
 
-//   HelloWorldOpResolver op_resolver;
-//   TF_LITE_ENSURE_STATUS(RegisterOps(op_resolver));
+  HelloWorldOpResolver op_resolver;
+  TF_LITE_ENSURE_STATUS(RegisterOps(op_resolver));
 
-//   // Arena size just a round number. The exact arena usage can be determined
-//   // using the RecordingMicroInterpreter.
-//   constexpr int kTensorArenaSize = 3000;
-//   uint8_t tensor_arena[kTensorArenaSize];
+  // Arena size just a round number. The exact arena usage can be determined
+  // using the RecordingMicroInterpreter.
+  constexpr int kTensorArenaSize = 8750;
+  uint8_t tensor_arena[kTensorArenaSize];
 
-//   tflite::MicroInterpreter interpreter(model, op_resolver, tensor_arena,
-//                                        kTensorArenaSize);
+  tflite::MicroInterpreter interpreter(model, op_resolver, tensor_arena,
+                                       kTensorArenaSize);
 
-//   TF_LITE_ENSURE_STATUS(interpreter.AllocateTensors());
+  TF_LITE_ENSURE_STATUS(interpreter.AllocateTensors());
 
 //   TfLiteTensor* input = interpreter.input(0);
 //   TFLITE_CHECK_NE(input, nullptr);
@@ -174,14 +177,14 @@ TfLiteStatus LoadFloatModelAndPerformInference() {
 //     TFLITE_CHECK_LE(abs(sin(golden_inputs_float[i]) - y_pred), epsilon);
 //   }
 
-//   return kTfLiteOk;
-// }
+  return kTfLiteOk;
+}
 
 int main(int argc, char* argv[]) {
   tflite::InitializeTarget();
   // TF_LITE_ENSURE_STATUS(ProfileMemoryAndLatency());
-  TF_LITE_ENSURE_STATUS(LoadFloatModelAndPerformInference());
-  // TF_LITE_ENSURE_STATUS(LoadQuantModelAndPerformInference());
+  // TF_LITE_ENSURE_STATUS(LoadFloatModelAndPerformInference());
+  TF_LITE_ENSURE_STATUS(LoadQuantModelAndPerformInference());
   MicroPrintf("~~~ALL TESTS PASSED~~~\n");
   return kTfLiteOk;
 }

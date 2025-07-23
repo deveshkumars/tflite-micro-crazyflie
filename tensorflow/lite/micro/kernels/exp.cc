@@ -38,7 +38,7 @@ TfLiteStatus ExpPrepare(TfLiteContext* context, TfLiteNode* node) {
   TfLiteTensor* output =
       micro_context->AllocateTempOutputTensor(node, kOutputTensor);
   TF_LITE_ENSURE(context, output != nullptr);
-  TF_LITE_ENSURE_TYPES_EQ(context, input->type, kTfLiteFloat32);
+  TF_LITE_ENSURE_TYPES_EQ(context, input->type, kTfLiteInt8); // changed from og
   TF_LITE_ENSURE_TYPES_EQ(context, output->type, input->type);
   TF_LITE_ENSURE_EQ(context, output->bytes, input->bytes);
   TF_LITE_ENSURE_EQ(context, output->dims->size, input->dims->size);
