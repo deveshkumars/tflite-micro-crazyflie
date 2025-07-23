@@ -150,14 +150,14 @@ TfLiteStatus LoadQuantModelAndPerformInference() {
 
   TF_LITE_ENSURE_STATUS(interpreter.AllocateTensors());
 
-//   TfLiteTensor* input = interpreter.input(0);
-//   TFLITE_CHECK_NE(input, nullptr);
+  TfLiteTensor* input = interpreter.input(0);
+  TFLITE_CHECK_NE(input, nullptr);
 
-//   TfLiteTensor* output = interpreter.output(0);
-//   TFLITE_CHECK_NE(output, nullptr);
+  TfLiteTensor* output = interpreter.output(0);
+  TFLITE_CHECK_NE(output, nullptr);
 
-//   float output_scale = output->params.scale;
-//   int output_zero_point = output->params.zero_point;
+  float output_scale = output->params.scale;
+  int output_zero_point = output->params.zero_point;
 
 //   // Check if the predicted output is within a small range of the
 //   // expected output
@@ -170,12 +170,25 @@ TfLiteStatus LoadQuantModelAndPerformInference() {
 //   // (golden_inputs_float[i] / input->params.scale + input->params.zero_point)
 //   int8_t golden_inputs_int8[kNumTestValues] = {-96, -63, -34, 0};
 
-//   for (int i = 0; i < kNumTestValues; ++i) {
+  int8_t int_inputs[13] = {0, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23};
+
+  // TfLiteTensor* input = interpreter.input(0);
+  memcpy(input->data.int8, int_inputs, sizeof(int_inputs));
+  TF_LITE_ENSURE_STATUS(interpreter.Invoke());
+  // TfLiteTensor* output = interpreter.output(0);
+  uint8_t outputs[4];
+  memcpy(outputs, output->data.uint8, sizeof(outputs));
+
+  for (int i = 0; i < 4; i++) {
+    MicroPrintf("outputs: %i", outputs[i]);
+    float y_pred = (outputs[i] - output_zero_point) * output_scale;
+    MicroPrintf("floaty_pred: %f", y_pred);  
+  }
+
+
 //     input->data.int8[0] = golden_inputs_int8[i];
 //     TF_LITE_ENSURE_STATUS(interpreter.Invoke());
-//     float y_pred = (output->data.int8[0] - output_zero_point) * output_scale;
-//     TFLITE_CHECK_LE(abs(sin(golden_inputs_float[i]) - y_pred), epsilon);
-//   }
+    // TFLITE_CHECK_LE(abs(sin(golden_inputs_float[i]) - y_pred), epsilon);
 
   return kTfLiteOk;
 }
